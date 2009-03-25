@@ -15,7 +15,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 
     var $info = array(
         'name' => 'MS Img Saver',
-        'version' => '0.1.0',
+        'version' => '0.2.0',
         'desc' => 'Provides an image upload field',
         'docs_url' => ''
     );
@@ -28,11 +28,9 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
     var $hooks = array(
         'publish_form_headers',
         'control_panel_home_page',
-		'submit_new_entry_absolute_end'
+		'submit_new_entry_absolute_end',
+		'delete_entries_loop'
     );
-	
-	var $field_array = array();
-	var $field_names = array();
 
 	/**
 	 * Default Field Settings
@@ -209,13 +207,21 @@ ob_end_clean();
 		$this->field_array[$FF->field_name]['field_data'] = $field_data;
 		$this->field_array[$FF->field_name]['field_settings'] = $field_settings;
 
-		
 		return $field_data;
 	}
 	
 	/**
 	 * Hooks
 	 */
+	function delete_entries_loop($val, $weblog_id)
+	{
+		foreach ($this->_get_settings() as $field => $row)
+		{
+			$dir = $row['save_path'].$val.'/';
+			$this->_delete_all($dir);
+		}
+	}
+	
 	function submit_new_entry_absolute_end($entry_id, $data)
 	{
 		global $DB;
@@ -252,9 +258,9 @@ ob_end_clean();
 				$DB->query($sql);
 			}
 				$count++;
-
 		}
 	}
+	
     function publish_form_headers()
     {
         $r = $this->get_last_call('') . NL . NL;
@@ -372,6 +378,55 @@ ob_end_clean();
 		echo $r;
 		exit();
     }
+	
+	function _delete_all($dirname)
+	{
+		if (is_file($dirname) || is_link($dirname))
+	    {
+	        return @unlink($dirname);
+	    }
+		if (!is_dir($dirname))
+		{
+			return false;
+		}
+		
+		$dir = dir($dirname);
+		while (false !== $entry = $dir->read())
+		{
+			// Skip pointers
+			if ($entry == '.' || $entry == '..') {
+				continue;
+			}
+
+			// Recurse
+			$this->_delete_all($dirname . $entry);
+		}
+
+		// Clean up
+		$dir->close();
+		rmdir($dirname);
+	}
+	
+	function _get_settings()
+	{
+		global $DB, $REGX;
+		
+		$field_settings = array();
+		
+		$sql = "SELECT fieldtype_id FROM exp_ff_fieldtypes WHERE class = 'ff_ms_img_saver'";
+		$results = $DB->query($sql);
+		
+		$field_id = "ftype_id_".$results->row['fieldtype_id'];
+		
+		$sql = "SELECT ff_settings FROM exp_weblog_fields WHERE field_type = '{$field_id}'";
+		$query = $DB->query($sql);
+		
+		foreach($query->result as $row)
+		{
+			$field_settings[] = $REGX->array_stripslashes(unserialize($row['ff_settings']));
+		}
+		return $field_settings;
+	}
 
 	// Resizing and Croping Function 
 	//  Image Resizer
