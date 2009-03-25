@@ -12,21 +12,32 @@ if ( ! defined('EXT')) exit('Invalid file request');
  */
 
 class Ff_ms_img_saver extends Fieldframe_Fieldtype {
-
+	
+	/**
+	 * Register FieldType Information
+	 * @var array
+	 */
     var $info = array(
-        'name' => 'MS Img Saver',
-        'version' => '0.2.0',
-        'desc' => 'Provides an image upload field',
-        'docs_url' => ''
+        'name' 		=> 'MS Img Saver',
+        'version' 	=> '0.2.2',
+        'desc' 		=> 'Provides an image upload field',
+        'docs_url' 	=> ''
     );
 
+	/**
+	 * Register FieldType Requirements
+	 * @var array
+	 */
     var $requires = array(
         'ff'        => '0.9.6',
         'cp_jquery' => '1.1'
     );
-
-    var $hooks = array(
-        'publish_form_headers',
+	
+	/**
+	 * Register FieldType Hooks
+	 * @var array
+	 */    
+	 var $hooks = array(
         'control_panel_home_page',
 		'submit_new_entry_absolute_end',
 		'delete_entries_loop'
@@ -37,10 +48,9 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 * @var array
 	 */
 	var $default_field_settings = array(
-		'width' => '200',
-		'height' => '200',
-		'save_path' => '/home/username/public_html/system/images/uploads/',
-		'save_url' => 'http://example.com/system/images/uploads/'
+		'width' 	=> '200',
+		'height' 	=> '200',
+		'upload_id' => 1
 	);
 
 	/**
@@ -52,46 +62,36 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	function display_field_settings($field_settings)
 	{
 		global $DSP, $LANG;
-
+		
+		$query = $this->_get_upload_prefs();
+		
 		$width = $field_settings['width'];
 		$height = $field_settings['height'];
-		$save_path = $field_settings['save_path'];
-		$save_url = $field_settings['save_url'];
+		$upload_id = $field_settings['upload_id'];
 
-		$cell2 = $DSP->qdiv('defaultBold', $LANG->line('img_saver_width_label'))
-		       . $DSP->input_text('width', $width, 4, '4', 'input', '50px')
-			   . $DSP->qdiv('default', $LANG->line('img_saver_proportions'))
-			   . $DSP->qdiv('defaultBold', $LANG->line('img_saver_height_label'))
-		       . $DSP->input_text('height', $height, 4, '4', 'input', '50px')
-			   . $DSP->qdiv('default', $LANG->line('img_saver_proportions'))
-			   . $DSP->qdiv('defaultBold', $LANG->line('img_saver_save_path_label'))
-		       . $DSP->input_text('save_path', $save_path, 200, '200', 'input', '450px')
-			   . $DSP->qdiv('default', $LANG->line('img_saver_include_slash'))
-			   . $DSP->qdiv('defaultBold', $LANG->line('img_saver_save_url_label'))
-		       . $DSP->input_text('save_url', $save_url, 200, '200', 'input', '450px')
-			   . $DSP->qdiv('default', $LANG->line('img_saver_include_slash'));
+		$cell2 = $DSP->qdiv('defaultBold', $LANG->line('img_saver_upload_label'))
+		       . $DSP->input_select_header('upload_id');
+		foreach ($query->result as $row)
+		{
+			if ($upload_id == $row['id'])
+			{
+        		$cell2 .= $DSP->input_select_option($row['id'], $row['name'], 'y');
+			} else {
+				$cell2 .= $DSP->input_select_option($row['id'], $row['name']);
+			}
+		}
+		$cell2 .= $DSP->input_select_footer()
+		        . $DSP->qdiv('default', $LANG->line('img_saver_more_uploads'))
+				. BR
+                . $DSP->qdiv('defaultBold', $LANG->line('img_saver_width_label'))
+		        . $DSP->input_text('width', $width, 4, '4', 'input', '50px')
+			    . $DSP->qdiv('default', $LANG->line('img_saver_proportions'))
+				. BR
+			    . $DSP->qdiv('defaultBold', $LANG->line('img_saver_height_label'))
+		        . $DSP->input_text('height', $height, 4, '4', 'input', '50px')
+			    . $DSP->qdiv('default', $LANG->line('img_saver_proportions'));
 
 		return array('cell2' => $cell2);
-	}
-
-	/**
-	 * Save Field Settings
-	 *
-	 * Turn the options textarea value into an array of option names and labels
-	 * 
-	 * @param  array  $field_settings  The user-submitted settings, pulled from $_POST
-	 * @return array  Modified $field_settings
-	 */
-	function save_field_settings($field_settings)
-	{
-		$r = array();
-		
-		$r['width'] = $field_settings['width'];
-		$r['height'] = $field_settings['height'];
-		$r['save_path'] = $field_settings['save_path'];
-		$r['save_url'] = $field_settings['save_url'];
-		
-		return $r;
 	}
 
 	/**
@@ -104,22 +104,19 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 */
     function display_field($field_name, $field_data, $field_settings)
     {
-        global $DSP, $PREFS, $SESS, $FNS, $DB, $LOC, $IN;
+        global $DSP, $PREFS, $SESS, $FF;
 		
-		$xid	= $FNS->random('encrypt');
-		$arr	= array(
-						'date'			=> $LOC->now,
-						'ip_address'	=> $IN->IP,
-						'hash'			=> $xid
-						);
-
-		$DB->query(  $DB->insert_string( 'exp_security_hashes', $arr ) );
+		//Insert JS
+		$this->include_js('js/livequery.js');
+		$this->include_js('js/jquery.form.js');
 		
 		//Grab Settings
-		preg_match('/^(field_id_)(.+)/', $field_name, $matches);		
-        $field_id = $matches[2];
-		$cp_url = str_replace('&amp;', '&', $PREFS->ini('cp_url') . '?S=' . $SESS->userdata['session_id']);
-		$img_url = $field_settings['save_url'];
+		$upload_prefs = $this->_get_upload_prefs($field_settings['upload_id']);
+        $field_id = $FF->row['field_id'];
+		$cp_url = $PREFS->ini('cp_url').'?S='.$SESS->userdata['session_id'];
+		$img_url = $upload_prefs['url'];
+		$xid = $this->_get_xid();
+		
 		//Grab Filename		
 		$explode = explode("/", $field_data);
 		$file_name = $explode[count($explode)-1];
@@ -202,7 +199,7 @@ ob_end_clean();
 	function save_field($field_data, $field_settings)
 	{
 		global $FF;
-
+		
 		$this->field_names[] = $FF->field_name;
 		$this->field_array[$FF->field_name]['field_data'] = $field_data;
 		$this->field_array[$FF->field_name]['field_settings'] = $field_settings;
@@ -213,15 +210,37 @@ ob_end_clean();
 	/**
 	 * Hooks
 	 */
+
+	/**
+	 * Delete Entries Loop
+	 *
+	 * Add additional processing for entry deletion in loop.
+	 *
+	 * @param string $val = Entry ID for entry being deleted during this loop
+	 * @param string $weblog_id = Weblog ID for entry being deleted
+	 *
+	 * @see    http://expressionengine.com/developers/extension_hooks/delete_entries_loop/
+	 */	
 	function delete_entries_loop($val, $weblog_id)
 	{
 		foreach ($this->_get_settings() as $field => $row)
 		{
-			$dir = $row['save_path'].$val.'/';
+			$upload_prefs = $this->_get_upload_prefs($row['upload_id']);
+			$dir = $upload_prefs['server_path'].$val.'/';
 			$this->_delete_all($dir);
 		}
 	}
 	
+	/**
+	 * Submit New Entry Absolute End
+	 *
+	 * Absolute end of all submission stuff for new entry including trackback/ping errors and right before the redirect.
+	 *
+	 * @param string $entry_id - Entry's ID
+	 * @param array $data - Array of data about entry (title, url_title)
+	 *
+	 * @see    http://expressionengine.com/developers/extension_hooks/submit_new_entry_absolute_end/
+	 */	
 	function submit_new_entry_absolute_end($entry_id, $data)
 	{
 		global $DB;
@@ -230,8 +249,10 @@ ob_end_clean();
 		
 		foreach ($this->field_array as $field => $row)
 		{
-			$save_path = $row['field_settings']['save_path'];
-			$save_url = $row['field_settings']['save_url'];
+			$upload_prefs = $this->_get_upload_prefs($row['field_settings']['upload_id']);
+			
+			$save_path = $upload_prefs['server_path'];
+			$save_url = $upload_prefs['url'];
 			
 			$explode = explode("/", $row['field_data']);
 			$file_name = $explode[count($explode)-1];
@@ -243,6 +264,8 @@ ob_end_clean();
 			
 			@rename($save_path.'tmp/'.$file_name, $save_path.$entry_id.'/'.$file_name);
 			@rename($save_path.'tmp/thumb_'.$file_name, $save_path.$entry_id.'/thumb_'.$file_name);
+			
+			$this->_delete_all($save_path.'tmp/');
 			
 			if ($old_file[$count] != $file_name)
 			{
@@ -260,49 +283,38 @@ ob_end_clean();
 				$count++;
 		}
 	}
-	
-    function publish_form_headers()
-    {
-        $r = $this->get_last_call('') . NL . NL;
 
-        $r .= '<script src="'.FT_URL.'ff_ms_img_saver/js/livequery.js" type="text/javascript"></script>' .NL;
-		$r .= '<script src="'.FT_URL.'ff_ms_img_saver/js/jquery.form.js" type="text/javascript"></script>' .NL .NL;
-
-        return $r;
-    }
-
+	/**
+	 * Control Panel Home
+	 *
+	 * Allows complete rewrite of CP Home Page
+	 *
+	 * @see    http://expressionengine.com/developers/extension_hooks/control_panel_home_page/
+	 */
     function control_panel_home_page()
 	{
-		global $EXT, $IN, $PREFS;
-		if ( $IN->GBL( 'ms_img_saver', 'GET' ) === FALSE )
-		{
-			return;
-		}
-		
-		$EXT->end_script = TRUE;
-
-		if (class_exists('Fieldframe_Base') === FALSE)
-		{
-			include EXT_MOD.'ext.fieldframe.php';
-		}
-
-		$AJAX = new Ff_ms_img_saver();
+		global $IN;
 
     	switch(strtolower($IN->GBL( 'ms_img_saver', 'GET' )))
     	{
     		case "upload" :
-    			return $AJAX->_ajax_upload();
+    			return $this->_ajax_upload();
 
     		case "delete" :
-    			return $AJAX->_ajax_delete();
+    			return $this->_ajax_delete();
     	}
-
     	return;
-
 	}
 	
 	/**
 	 * Supporting Functions
+	 */
+	 
+	/**
+	 * AJAX Upload
+	 *
+	 * @access private
+	 * @returns string The response for uploading image.
 	 */
     function _ajax_upload()
     {
@@ -311,16 +323,14 @@ ob_end_clean();
 		$field_id = $_POST['field_id'];
 		$sql = "SELECT ff_settings FROM exp_weblog_fields WHERE field_id = {$field_id}";
 		$query = $DB->query($sql);
+		$field_settings = $REGX->array_stripslashes(unserialize($query->row['ff_settings']));
 		
-		foreach($query->result as $row)
-		{
-			$field_settings = $REGX->array_stripslashes(unserialize($row['ff_settings']));
-		}
+		$upload_prefs = $this->_get_upload_prefs($field_settings['upload_id']);
 		
 		$width = $field_settings['width'];
 		$height = $field_settings['height'];
-        $tmp_upload_dir = $field_settings['save_path'] . "tmp/";
-		$tmp_upload_url = $field_settings['save_url'] . "tmp/";
+        $tmp_upload_dir = $upload_prefs['server_path'] . "tmp/";
+		$tmp_upload_url = $upload_prefs['url'] . "tmp/";
         $field_name = "field_id_" . $field_id;
 		
 		$filename = strtolower($FNS->filename_security(str_replace(' ', '_', $_FILES[$field_name]['name'])));
@@ -352,7 +362,12 @@ ob_end_clean();
             exit();
         }
     }
-
+	
+	/**
+	 * AJAX Delete
+	 *
+	 * @access private
+	 */
 	function _ajax_delete()
     {
 		global $FNS, $DSP, $DB, $REGX;
@@ -363,12 +378,10 @@ ob_end_clean();
 		$sql = "SELECT ff_settings FROM exp_weblog_fields WHERE field_id = {$field_id}";
 		$query = $DB->query($sql);
 		
-		foreach($query->result as $row)
-		{
-			$field_settings = $REGX->array_stripslashes(unserialize($row['ff_settings']));
-		}
-
-        $tmp_upload_dir = $field_settings['save_path'] . "tmp/";
+		$field_settings = $REGX->array_stripslashes(unserialize($query->row['ff_settings']));
+		$upload_prefs = $this->_get_upload_prefs($field_settings['upload_id']);
+		
+        $tmp_upload_dir = $upload_prefs['server_path'] . "tmp/";
         $file_name = $_POST['file_name_'.$field_id];
 
 		@unlink($tmp_upload_dir . $file_name);
@@ -379,6 +392,11 @@ ob_end_clean();
 		exit();
     }
 	
+	/**
+	 * Delete All
+	 *
+	 * @access private
+	 */	
 	function _delete_all($dirname)
 	{
 		if (is_file($dirname) || is_link($dirname))
@@ -406,7 +424,12 @@ ob_end_clean();
 		$dir->close();
 		rmdir($dirname);
 	}
-	
+	/**
+	 * Get MS Img Saver FieldType Settings
+	 *
+	 * @access private
+	 * @returns array The saved settings for all MS Img Saver FieldTypes.
+	 */	
 	function _get_settings()
 	{
 		global $DB, $REGX;
@@ -426,6 +449,51 @@ ob_end_clean();
 			$field_settings[] = $REGX->array_stripslashes(unserialize($row['ff_settings']));
 		}
 		return $field_settings;
+	}
+	
+	/**
+	 * Get Upload Prefs
+	 *
+	 * @access private
+	 * @returns array The upload prefs for EE.
+	 */		
+	function _get_upload_prefs($id='')
+	{
+		global $DB, $PREFS;
+		
+		if (!$id)
+		{
+			$site_id = $PREFS->ini('site_id');
+			$sql = "SELECT id, name FROM exp_upload_prefs WHERE site_id = {$site_id}";
+			return $DB->query($sql);
+		} else {
+			$site_id = $PREFS->ini('site_id');
+			$sql = "SELECT id, name, server_path, url FROM exp_upload_prefs WHERE id = {$id}";
+			$query = $DB->query($sql);
+			return $query->row;
+		}
+	}
+	
+	/**
+	 * Get XID
+	 *
+	 * @access private
+	 * @returns string The XID needed to use AjaxSubmit
+	 */
+	function _get_xid()
+	{
+		global $DB, $FNS, $LOC, $IN;
+		
+		$xid = $FNS->random('encrypt');
+		$arr = array(
+			'date'			=> $LOC->now,
+			'ip_address'	=> $IN->IP,
+			'hash'			=> $xid
+		);
+
+		$DB->query($DB->insert_string('exp_security_hashes', $arr));
+		
+		return $xid;
 	}
 
 	// Resizing and Croping Function 
@@ -579,9 +647,10 @@ ob_end_clean();
 		}
 
 		$out_sized = array (
-						'img_width'	    =>	$final_width,
-						'img_height'	=>  $final_height
-					);
+			'img_width'	    =>	$final_width,
+			'img_height'	=>  $final_height
+		);
+		
 		if($mime == "image/jpeg")
 		{
 			$this->UnsharpMask($output, '', 0.5, 3);
