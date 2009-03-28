@@ -1,0 +1,15 @@
+Greetings,
+
+MS Img Saver is a FieldType for "Brandon Kelly's FieldFrame":http://github.com/brandonkelly/bk.fieldframe.ee_addon/tree/master.
+
+*This FieldType is compatible with Brandon Kelly's FF Matrix FieldType*.
+
+
+*Setup*
+
+# Download the extension and place the ff_ms_img_saver folder under fieldtypes inside your extensions folder.
+# Enable the FieldType in the FieldFrame Extension Settings
+# Use it in a template just like you would any other custom field.  It will spit out the full URL to the img ou have uploaded (i.e. http://example.com/images/uploads/13/uploaded_img.jpg).
+# Enjoy :)
+
+Let me know if you have any questions.
