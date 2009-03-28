@@ -1,14 +1,12 @@
 <?php
 
 $L = array(
-
-
 // Site Settings
 
 'img_saver_width_label' =>
 'Width of Image',
 'img_saver_height_label' =>
-'Width of Image',
+'Height of Image',
 'img_saver_save_path_label' =>
 'Path to where you want to save the image.',
 'img_saver_save_url_label' =>

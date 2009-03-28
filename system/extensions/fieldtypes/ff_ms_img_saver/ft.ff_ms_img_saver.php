@@ -19,7 +19,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 */
     var $info = array(
         'name' 		=> 'MS Img Saver',
-        'version' 	=> '0.9.0',
+        'version' 	=> '0.9.1',
         'desc' 		=> 'Provides an image upload field',
         'docs_url' 	=> 'http://github.com/MeanStudios/ms.ff.img_saver.ee_addon/tree/master'
     );
@@ -63,6 +63,10 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 		'upload_id' 	=> '1'
 	);
 
+	/**
+	 * Extra variable declerations
+	 * @var array
+	 */
 	var $xid = '';
 	var	$field_names = array();
 	var	$field_array = array();
@@ -89,12 +93,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 		       . $DSP->input_select_header('upload_id');
 		foreach ($query->result as $row)
 		{
-			if ($upload_id == $row['id'])
-			{
-        		$cell2 .= $DSP->input_select_option($row['id'], $row['name'], 'y');
-			} else {
-				$cell2 .= $DSP->input_select_option($row['id'], $row['name']);
-			}
+			$cell2 .= ($upload_id == $row['id']) ? $DSP->input_select_option($row['id'], $row['name'], 'y') : $DSP->input_select_option($row['id'], $row['name']);
 		}
 		$cell2 .= $DSP->input_select_footer()
 		        . $DSP->qdiv('default', $LANG->line('img_saver_more_uploads'))
@@ -126,7 +125,8 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 		$this->include_js('js/livequery.js');
 		$this->include_js('js/jquery.form.js');
 
-		//Grab field_id
+		//Grab field_id - needed to check if on the right page since
+        //FF Matrix doesn't like extra inputs while updating Custom Field Settings.
 		if (($IN->GBL('C', 'GET' ) == 'edit') || ($IN->GBL('C', 'GET' ) == 'publish')) $f_ids = $this->_get_ids($field_name);
 
 		//Grab Settings
@@ -141,7 +141,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 		$file_name = $explode[count($explode)-1];
 		$img_url = str_replace($file_name, "", $field_data);
 
-
+        //Some JS magic to make AJAX work.
 ob_start();
 ?>
 $(document).ready(function(){
@@ -159,9 +159,8 @@ $(document).ready(function(){
 				XID : '<?= $this->xid ?>'
 			},
 			success: function(){
-				el.hide();
+				el.attr('value', '').hide();
 				el.next().show();
-
 			}
 		});
 		return false;
@@ -192,15 +191,18 @@ ob_end_clean();
 
 		$this->insert_js($js);
 
+		$css = ".img_delete {cursor: pointer; float: left;} .ms_thumb {float: left; margin-left: 15px;} .ms_clear {clear: both;}";
+		$this->insert_css($css);
+
 		if (!$field_data)
 		{
-			$r = '<input name="'.$field_name.'" type="file" class="img_upload" /><div class="img_delete" style="display: none;"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" />&nbsp;&nbsp;Delete Image</div>';
+			$r = '<input name="'.$field_name.'" type="file" class="img_upload" /><div class="img_delete" style="display: none;"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" /></div>';
 			$r .= NL . '<div>';
 			$r .= (!isset($f_ids['field_type_key'])) ?  $DSP->input_hidden($field_name, $field_data) : $DSP->input_hidden($field_name.'[url]', $field_data);
 			$r .= ((!isset($f_ids['field_type_key'])) && (($IN->GBL('C', 'GET' ) == 'edit') || ($IN->GBL('C', 'GET' ) == 'publish'))) ?  $DSP->input_hidden('file_name', $file_name) : $DSP->input_hidden($field_name.'[file_name]', $file_name);
 		} else {
-			$r = '<input style="display: none;" name="'.$field_name.'" type="file" class="img_upload" /><div class="img_delete"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" />&nbsp;&nbsp;Delete Image</div>';
-			$r .= NL . '<div><p><img src="'.$img_url.'thumb_'.$file_name.'" /></p>';
+			$r = '<input style="display: none;" name="'.$field_name.'" type="file" class="img_upload" /><div class="img_delete"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" /></div>';
+			$r .= NL . '<div><p class="ms_thumb"><img src="'.$img_url.'thumb_'.$file_name.'" /><div class="ms_clear"></div></p>';
 			$r .= (!isset($f_ids['field_type_key'])) ?  $DSP->input_hidden($field_name, $field_data) : $DSP->input_hidden($field_name.'[url]', $field_data);
 			$r .= (!isset($f_ids['field_type_key'])) ?  $DSP->input_hidden('file_name', $file_name) : $DSP->input_hidden($field_name.'[file_name]', $file_name);
 		}
@@ -219,7 +221,7 @@ ob_end_clean();
 	 */
 	function display_cell_settings($cell_settings)
 	{
-		global $DSP, $LANG;
+        global $DSP, $LANG;
 
 		$width = $cell_settings['img_width'];
 		$height = $cell_settings['img_height'];
@@ -232,12 +234,7 @@ ob_end_clean();
 
 		foreach ($query->result as $row)
 		{
-			if ($upload_id == $row['id'])
-			{
-        		$r .= $DSP->input_select_option($row['id'], $row['name'], 'y');
-			} else {
-				$r .= $DSP->input_select_option($row['id'], $row['name']);
-			}
+			$r .= ($upload_id == $row['id']) ? $DSP->input_select_option($row['id'], $row['name'], 'y') : $DSP->input_select_option($row['id'], $row['name']);
 		}
 		$r .= $DSP->input_select_footer()
 		   . $DSP->qdiv('default', $LANG->line('img_saver_more_uploads'))
@@ -288,12 +285,9 @@ ob_end_clean();
 	{
 		global $FF, $FFM;
 
-		$row_count = $FFM->row_count;
-		$col_id = $FFM->col_id;
-
 		$cell_array = array(
-			'col_id' => $col_id,
-			'row_count' => $row_count,
+			'col_id' => $FFM->col_id,
+			'row_count' => $FFM->row_count,
 			'cell_data' => $cell_data['url'],
 			'file_name' => $cell_data['file_name'],
 			'file_delete' => $cell_data['delete'],
@@ -363,7 +357,6 @@ ob_end_clean();
 
 		$field_count = 0;
 
-
 		// Lets loop through the Field Data
 		foreach ($this->field_array as $field => $row)
 		{
@@ -399,10 +392,9 @@ ob_end_clean();
 			$field_count++;
 		}
 
-		// Lets loop through the Cell Data
-
 		$cell_count = 0;
 
+		// Lets loop through the Cell Data
 		foreach ($this->cell_array as $key => $row)
 		{
 			$upload_prefs = $this->_get_upload_prefs($row['cell_settings']['upload_id']);
@@ -518,7 +510,7 @@ ob_end_clean();
 				$this->_resize($img_file, $width, $height, true, false, $img_file);
 				$this->_resize($img_file, 80, 80, false, true, $thumb_file);
 
-				$r = "<p><img src=\"{$thumb_url}\" /></p>";
+				$r = "<p class=\"ms_thumb\"><img src=\"{$thumb_url}\"/></p><div class=\"ms_clear\"></div>";
 				$r .= NL . $DSP->input_hidden($field_name, $img_url);
 				$r .= NL . $DSP->input_hidden('file_name', $filename);
 
@@ -534,7 +526,7 @@ ob_end_clean();
 				$this->_resize($img_file, $width, $height, true, false, $img_file);
 				$this->_resize($img_file, 80, 80, false, true, $thumb_file);
 
-				$r = "<p><img src=\"{$thumb_url}\" /></p>";
+				$r = "<p class=\"ms_thumb\"><img src=\"{$thumb_url}\"/></p><div class=\"ms_clear\"></div>";
 				$r .= NL . $DSP->input_hidden($field_name.'[url]', $img_url);
 				$r .= NL . $DSP->input_hidden($field_name.'[file_name]', $filename);
 
@@ -571,7 +563,6 @@ ob_end_clean();
 
         $tmp_upload_dir = $upload_prefs['server_path'] . "tmp/";
 
-
 		$file_name = (!isset($f_ids['field_type_key'])) ? $_POST['field_id_'.$f_ids['field_id']]['file_name'] : $_POST['field_id_'.$f_ids['field_id']][$f_ids['field_row_key']][$f_ids['field_type_key']]['file_name'];
 
 		@unlink($tmp_upload_dir . $file_name);
@@ -591,14 +582,9 @@ ob_end_clean();
 	 */
 	function _delete_all($dirname)
 	{
-		if (is_file($dirname) || is_link($dirname))
-	    {
-	        return @unlink($dirname);
-	    }
-		if (!is_dir($dirname))
-		{
-			return false;
-		}
+		if (is_file($dirname) || is_link($dirname)) return @unlink($dirname);
+
+		if (!is_dir($dirname)) return false;
 
 		$dir = dir($dirname);
 		while (false !== $entry = $dir->read())
@@ -607,7 +593,6 @@ ob_end_clean();
 			if ($entry == '.' || $entry == '..') {
 				continue;
 			}
-
 			// Recurse
 			$this->_delete_all($dirname . $entry);
 		}
@@ -616,6 +601,7 @@ ob_end_clean();
 		$dir->close();
 		rmdir($dirname);
 	}
+
 	/**
 	 * Get MS Img Saver FieldType Field Settings
 	 *
