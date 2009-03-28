@@ -2,8 +2,14 @@ Greetings,
 
 MS Img Saver is a FieldType for "Brandon Kelly's FieldFrame":http://github.com/brandonkelly/bk.fieldframe.ee_addon/tree/master.
 
-*This FieldType is compatible with Brandon Kelly's FF Matrix FieldType*.
+The FieldType is currently in beta, so please report to me (cody [at] meanstudios [d0t] com) if you have any issues.
 
+*Features*
+
+# Easily upload images for your entries.
+# Sizes are pre-configured and images are automatically resized/cropped to fit to your specifications.
+# *Compatible with Brandon Kelly's FF Matrix FieldType.*
+# Automatically deletes images if they are deleted from the entry (See Known Issues for an exception).
 
 *Setup*
 
@@ -11,5 +17,9 @@ MS Img Saver is a FieldType for "Brandon Kelly's FieldFrame":http://github.com/b
 # Enable the FieldType in the FieldFrame Extension Settings
 # Use it in a template just like you would any other custom field.  It will spit out the full URL to the img ou have uploaded (i.e. http://example.com/images/uploads/13/uploaded_img.jpg).
 # Enjoy :)
+
+*Known Issues*
+
+# When using it in FF Matrix, the images will not be deleted from the server when editing an entry and using the "Delete Row" option.  There doesn't seem to be anyway around it.
 
 Let me know if you have any questions.
