@@ -19,7 +19,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 */
     var $info = array(
         'name' 		=> 'MS Img Saver',
-        'version' 	=> '0.9.1',
+        'version' 	=> '0.9.5',
         'desc' 		=> 'Provides an image upload field',
         'docs_url' 	=> 'http://github.com/MeanStudios/ms.ff.img_saver.ee_addon/tree/master'
     );
@@ -29,7 +29,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 * @var array
 	 */
     var $requires = array(
-        'ff'        => '0.9.6',
+        'ff'        => '0.9.8',
         'cp_jquery' => '1.1'
     );
 
