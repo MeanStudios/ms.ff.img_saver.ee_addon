@@ -2,7 +2,7 @@ Greetings,
 
 MS Img Saver is a FieldType for "Brandon Kelly's FieldFrame":http://github.com/brandonkelly/bk.fieldframe.ee_addon/tree/master. It enables you to easily upload images for your entries in "ExpressionEngine":http://expressionengine.com
 
-The FieldType is currently at v1.0.
+The FieldType is currently at v1.0.1.
 
 *Screen Shots*
 
@@ -19,13 +19,16 @@ The FieldType is currently at v1.0.
 *Setup*
 
 # Download the extension and place the ff_ms_img_saver folder under fieldtypes inside your extensions folder.
+# Update your jQuery for the Control Panel versions to:
+## jQuery URL: http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js
+## jQuery UI URL: http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.1/jquery-ui.min.js
 # Enable the FieldType in the FieldFrame Extension Settings
-# Use it in a template just like you would any other custom field.  It will spit out the full URL to the img ou have uploaded (i.e. http://example.com/images/uploads/13/uploaded_img.jpg).
+# Use it in a template just like you would any other custom field.  It will spit out the full URL to the img you have uploaded (i.e. http://example.com/images/uploads/13/uploaded_img.jpg).
 # Enjoy :)
 
 *Known Issues*
 
 # When using it in FF Matrix, the images will not be deleted from the server when editing an entry and using the "Delete Row" option.  There doesn't seem to be anyway around it.
-# Only compatible with jQuery 1.2.6 due to livequery not working with jQuery 1.3+.  Until jQuery 1.3+ is more widely adopted by the EE comunity I will leave it as is.
+# Only compatible with jQuery 1.3+ due to live() not working with jQuery 1.2.6.
 
 Let me know if you have any questions.
