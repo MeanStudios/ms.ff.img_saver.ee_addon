@@ -19,7 +19,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 */
     var $info = array(
         'name' 		=> 'MS Img Saver',
-        'version' 	=> '0.9.5',
+        'version' 	=> '0.9.6',
         'desc' 		=> 'Provides an image upload field',
         'docs_url' 	=> 'http://github.com/MeanStudios/ms.ff.img_saver.ee_addon/tree/master'
     );
@@ -29,7 +29,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 * @var array
 	 */
     var $requires = array(
-        'ff'        => '0.9.8',
+        'ff'        => '0.9.9',
         'cp_jquery' => '1.1'
     );
 
@@ -327,16 +327,17 @@ ob_end_clean();
 		//Lets delete the Cell Data
 		foreach ($this->_get_cell_settings() as $field => $row)
 		{
-			$count = 1;
 			foreach ($row as $key => $value)
 			{
-				if ($value[$count]['type'] == 'ff_ms_img_saver')
+				foreach ($value as $name)
 				{
-					$upload_prefs = $this->_get_upload_prefs($value[$count]['settings']['upload_id']);
-					$dir = $upload_prefs['server_path'].$val.'/';
-					$this->_delete_all($dir);
+					if ($name['type'] == 'ff_ms_img_saver')
+					{
+						$upload_prefs = $this->_get_upload_prefs($name['settings']['upload_id']);
+						$dir = $upload_prefs['server_path'].$val.'/';
+						$this->_delete_all($dir);
+					}
 				}
-				$count++;
 			}
 		}
 	}
