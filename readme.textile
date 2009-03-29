@@ -5,8 +5,9 @@ MS Img Saver is a FieldType for "Brandon Kelly's FieldFrame":http://github.com/b
 The FieldType is currently at v1.0.
 
 *Screen Shots*
-"Sreen Shot 1":http://meanstudios.com/media/images/ms_img_saver1.jpg
-"Sreen Shot 2":http://meanstudios.com/media/images/ms_img_saver2.jpg
+
+* "Sreen Shot 1":http://meanstudios.com/media/images/ms_img_saver1.jpg
+* "Sreen Shot 2":http://meanstudios.com/media/images/ms_img_saver2.jpg
 
 *Features*
 
