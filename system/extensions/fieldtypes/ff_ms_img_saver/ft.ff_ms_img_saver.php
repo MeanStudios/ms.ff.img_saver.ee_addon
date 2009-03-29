@@ -19,7 +19,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 */
     var $info = array(
         'name' 		=> 'MS Img Saver',
-        'version' 	=> '1.0.0',
+        'version' 	=> '1.0.1',
         'desc' 		=> 'Provides an image upload field',
         'docs_url' 	=> 'http://github.com/MeanStudios/ms.ff.img_saver.ee_addon/tree/master'
     );
@@ -123,9 +123,8 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 
 		//Insert JS & CSS
 		$this->include_css('css/ms_img_saver.css');
-		$this->include_js('js/livequery.js');
 		$this->include_js('js/jquery.form.js');
-		
+
 
 		//Grab field_id - needed to check if on the right page since
         //FF Matrix doesn't like extra inputs while updating Custom Field Settings.
@@ -138,22 +137,22 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 
 		//Check if XID is already set, if not, get a new one.
 		if ($this->xid == '') $this->xid = $this->_get_xid();
-		
+
 		//Grab Filename
 		$explode = explode("/", $field_data);
 		$file_name = $explode[count($explode)-1];
-		
+
 		//Get Image Info
 		$img_width = (($field_settings['img_width'] == '0') OR ($field_settings['img_width'] == '')) ? 'Variable' : $field_settings['img_width'].'px';
 		$img_height = (($field_settings['img_height'] == '0') OR ($field_settings['img_height'] == '')) ? 'Variable' : $field_settings['img_height'].'px';
-		$img_url = (!$field_data) ? $upload_prefs['url'].(($IN->GBL('entry_id', 'GET')) ? $IN->GBL('entry_id', 'GET').'/' : '') : str_replace($file_name, "", $field_data);		
+		$img_url = (!$field_data) ? $upload_prefs['url'].(($IN->GBL('entry_id', 'GET')) ? $IN->GBL('entry_id', 'GET').'/' : '') : str_replace($file_name, "", $field_data);
 
         //Some JS magic to make AJAX work.
 ob_start();
 ?>
 $(document).ready(function(){
 	$("input[name='submit']").attr('name', 'susbmit');
-	$('.img_upload').livequery('change', function(){
+	$('.img_upload').live('change', function(){
 		el = $(this);
 		target = el.parent().parent().next();
 		$('form').ajaxSubmit({
@@ -166,7 +165,7 @@ $(document).ready(function(){
 				XID : '<?= $this->xid ?>'
 			},
 			beforeSubmit: function() {
-				target.css('background', 'url(<?= FT_URL ?>ff_ms_img_saver/imgs/loading.gif) center no-repeat')
+				target.css('background', 'url(<?= FT_URL ?>ff_ms_img_saver/imgs/loading.gif) center no-repeat');
 			},
 			success: function(){
 				el.attr('value', '').parent().hide();
@@ -178,7 +177,7 @@ $(document).ready(function(){
 		});
 		return false;
 	});
-	$('.img_delete').livequery('click', function(){
+	$('.img_delete').live('click', function(){
 		el = $(this);
 		target = el.parent().next();
 		$('form').ajaxSubmit({
@@ -207,7 +206,7 @@ $js = ob_get_contents();
 ob_end_clean();
 
 		$this->insert_js($js);
-		
+
 		$r = '<div class="ms_upload_img_container">';
 		if (!$field_data)
 		{
@@ -548,7 +547,7 @@ ob_end_clean();
 
 				$r = NL . '<input type="hidden" name="thumb_url" value="'.$thumb_url.'" />';
 				$r .= NL . '<input type="hidden" name="file_name" value="'.$filename.'" />';
-				$r .= NL . $DSP->input_hidden($field_name.'[url]', $img_url); 
+				$r .= NL . $DSP->input_hidden($field_name.'[url]', $img_url);
 				$r .= NL . $DSP->input_hidden($field_name.'[file_name]', $filename);
 
 				echo $r;
