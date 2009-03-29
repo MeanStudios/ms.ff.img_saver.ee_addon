@@ -1,8 +1,12 @@
 Greetings,
 
-MS Img Saver is a FieldType for "Brandon Kelly's FieldFrame":http://github.com/brandonkelly/bk.fieldframe.ee_addon/tree/master.
+MS Img Saver is a FieldType for "Brandon Kelly's FieldFrame":http://github.com/brandonkelly/bk.fieldframe.ee_addon/tree/master. It enables you to easily upload images for your entries in "ExpressionEngine":http://expressionengine.com
 
 The FieldType is currently at v1.0.
+
+*Screen Shots*
+!http://meanstudios.com/media/images/ms_img_saver1.jpg!
+!http://meanstudios.com/media/images/ms_img_saver2.jpg!
 
 *Features*
 
