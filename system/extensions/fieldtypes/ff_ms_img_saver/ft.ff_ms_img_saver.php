@@ -19,7 +19,7 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 	 */
     var $info = array(
         'name' 		=> 'MS Img Saver',
-        'version' 	=> '0.9.6',
+        'version' 	=> '1.0.0',
         'desc' 		=> 'Provides an image upload field',
         'docs_url' 	=> 'http://github.com/MeanStudios/ms.ff.img_saver.ee_addon/tree/master'
     );
@@ -121,9 +121,11 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
     {
         global $DSP, $PREFS, $SESS, $IN;
 
-		//Insert JS
+		//Insert JS & CSS
+		$this->include_css('css/ms_img_saver.css');
 		$this->include_js('js/livequery.js');
 		$this->include_js('js/jquery.form.js');
+		
 
 		//Grab field_id - needed to check if on the right page since
         //FF Matrix doesn't like extra inputs while updating Custom Field Settings.
@@ -133,13 +135,18 @@ class Ff_ms_img_saver extends Fieldframe_Fieldtype {
 		$upload_id = $field_settings['upload_id'];
 		$upload_prefs = $this->_get_upload_prefs($upload_id);
 		$cp_url = $PREFS->ini('cp_url').'?S='.$SESS->userdata['session_id'];
-		$img_url = $upload_prefs['url'];
-		if ($this->xid == '') $this->xid = $this->_get_xid();
 
+		//Check if XID is already set, if not, get a new one.
+		if ($this->xid == '') $this->xid = $this->_get_xid();
+		
 		//Grab Filename
 		$explode = explode("/", $field_data);
 		$file_name = $explode[count($explode)-1];
-		$img_url = str_replace($file_name, "", $field_data);
+		
+		//Get Image Info
+		$img_width = (($field_settings['img_width'] == '0') OR ($field_settings['img_width'] == '')) ? 'Variable' : $field_settings['img_width'].'px';
+		$img_height = (($field_settings['img_height'] == '0') OR ($field_settings['img_height'] == '')) ? 'Variable' : $field_settings['img_height'].'px';
+		$img_url = (!$field_data) ? $upload_prefs['url'].(($IN->GBL('entry_id', 'GET')) ? $IN->GBL('entry_id', 'GET').'/' : '') : str_replace($file_name, "", $field_data);		
 
         //Some JS magic to make AJAX work.
 ob_start();
@@ -148,7 +155,7 @@ $(document).ready(function(){
 	$("input[name='submit']").attr('name', 'susbmit');
 	$('.img_upload').livequery('change', function(){
 		el = $(this);
-		target = el.next().next();
+		target = el.parent().parent().next();
 		$('form').ajaxSubmit({
 			url: '<?= $cp_url?>&ms_img_saver=upload',
 			target: target,
@@ -158,55 +165,67 @@ $(document).ready(function(){
 				field_name : el.attr('name'),
 				XID : '<?= $this->xid ?>'
 			},
+			beforeSubmit: function() {
+				target.css('background', 'url(<?= FT_URL ?>ff_ms_img_saver/imgs/loading.gif) center no-repeat')
+			},
 			success: function(){
-				el.attr('value', '').hide();
-				el.next().show();
+				el.attr('value', '').parent().hide();
+                el.parent().prev().hide();
+				el.parent().next().show();
+				target.css('background', 'url(' + target.children("input[name='thumb_url']").attr('value') + ') center no-repeat');
+                el.parent().parent().parent().next().children('span').html(target.children("input[name='file_name']").attr('value'));
 			}
 		});
 		return false;
 	});
 	$('.img_delete').livequery('click', function(){
 		el = $(this);
-		target = el.next();
+		target = el.parent().next();
 		$('form').ajaxSubmit({
 			url: '<?= $cp_url?>&ms_img_saver=delete',
 			type: 'post',
 			iframe: true,
 			data: {
-				field_name : el.prev().attr('name'),
+				field_name : el.prev().children('input').attr('name'),
 				XID : '<?= $this->xid ?>'
 			},
 			success: function(response){
+				target.html(response);
+				target.css('background', '');
 				el.hide();
 				el.prev().show();
-				target.html(response);
+                el.prev().prev().show();
+                el.parent().parent().next().children('span').html('');
 			}
 		});
 		return false;
 	});
 });
+
 <?php
 $js = ob_get_contents();
 ob_end_clean();
 
 		$this->insert_js($js);
-
-		$css = ".img_delete {cursor: pointer; float: left;} .ms_thumb {float: left; margin-left: 15px;} .ms_clear {clear: both;}";
-		$this->insert_css($css);
-
+		
+		$r = '<div class="ms_upload_img_container">';
 		if (!$field_data)
 		{
-			$r = '<input name="'.$field_name.'" type="file" class="img_upload" /><div class="img_delete" style="display: none;"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" /></div>';
-			$r .= NL . '<div>';
+			$r .= '<div class="ms_upload_container"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_upload.png" /><div class="ms_upload"><input name="'.$field_name.'" type="file" class="img_upload" /></div><div class="img_delete" style="display: none;"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" /></div></div>';
+			$r .= NL . '<div class="ms_img_container">';
 			$r .= (!isset($f_ids['field_type_key'])) ?  $DSP->input_hidden($field_name, $field_data) : $DSP->input_hidden($field_name.'[url]', $field_data);
 			$r .= ((!isset($f_ids['field_type_key'])) && (($IN->GBL('C', 'GET' ) == 'edit') || ($IN->GBL('C', 'GET' ) == 'publish'))) ?  $DSP->input_hidden('file_name', $file_name) : $DSP->input_hidden($field_name.'[file_name]', $file_name);
+			$r .= '</div>';
 		} else {
-			$r = '<input style="display: none;" name="'.$field_name.'" type="file" class="img_upload" /><div class="img_delete"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" /></div>';
-			$r .= NL . '<div><p class="ms_thumb"><img src="'.$img_url.'thumb_'.$file_name.'" /><div class="ms_clear"></div></p>';
+			$r .= '<div class="ms_upload_container"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_upload.png" style="display: none;"/><div class="ms_upload" style="display: none;"><input name="'.$field_name.'" type="file" class="img_upload" /></div><div class="img_delete"><img src="' . FT_URL . 'ff_ms_img_saver/imgs/file_delete.png" /></div></div>';
+			$r .= NL . '<div class="ms_img_container" style="background: url('.$img_url.'thumb_'.$file_name.') center no-repeat">';
 			$r .= (!isset($f_ids['field_type_key'])) ?  $DSP->input_hidden($field_name, $field_data) : $DSP->input_hidden($field_name.'[url]', $field_data);
 			$r .= (!isset($f_ids['field_type_key'])) ?  $DSP->input_hidden('file_name', $file_name) : $DSP->input_hidden($field_name.'[file_name]', $file_name);
+			$r .= '</div>';
 		}
-		$r .= "</div>";
+		$r .= '</div>';
+		$r .= '<div class="ms_info_container"><h3>Image Information</h3><strong>Filename</strong><br />&nbsp;&nbsp;&nbsp;<span>'.$file_name.'</span><br /><strong>Save Location</strong><br />&nbsp;&nbsp;&nbsp;'.$img_url.'<br /><strong>Dimensions</strong><br />&nbsp;&nbsp;&nbsp;Max-Width: '.$img_width.'<br />&nbsp;&nbsp;&nbsp;Max-Height: '.$img_height.'</div>';
+		$r .= '<div style="clear: both;"></div>';
 
 		$r .= ((!isset($f_ids['field_type_key'])) && (($IN->GBL('C', 'GET' ) == 'edit') || ($IN->GBL('C', 'GET' ) == 'publish'))) ? $DSP->input_hidden('delete[]', $file_name) : $DSP->input_hidden($field_name.'[delete]', $file_name);
 
@@ -511,9 +530,9 @@ ob_end_clean();
 				$this->_resize($img_file, $width, $height, true, false, $img_file);
 				$this->_resize($img_file, 80, 80, false, true, $thumb_file);
 
-				$r = "<p class=\"ms_thumb\"><img src=\"{$thumb_url}\"/></p><div class=\"ms_clear\"></div>";
+				$r = NL . '<input type="hidden" name="thumb_url" value="'.$thumb_url.'" />';
+				$r .= NL . '<input type="hidden" name="file_name" value="'.$filename.'" />';
 				$r .= NL . $DSP->input_hidden($field_name, $img_url);
-				$r .= NL . $DSP->input_hidden('file_name', $filename);
 
 				echo $r;
 				exit();
@@ -527,8 +546,9 @@ ob_end_clean();
 				$this->_resize($img_file, $width, $height, true, false, $img_file);
 				$this->_resize($img_file, 80, 80, false, true, $thumb_file);
 
-				$r = "<p class=\"ms_thumb\"><img src=\"{$thumb_url}\"/></p><div class=\"ms_clear\"></div>";
-				$r .= NL . $DSP->input_hidden($field_name.'[url]', $img_url);
+				$r = NL . '<input type="hidden" name="thumb_url" value="'.$thumb_url.'" />';
+				$r .= NL . '<input type="hidden" name="file_name" value="'.$filename.'" />';
+				$r .= NL . $DSP->input_hidden($field_name.'[url]', $img_url); 
 				$r .= NL . $DSP->input_hidden($field_name.'[file_name]', $filename);
 
 				echo $r;
